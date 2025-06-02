@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assembly PC Builder</title>
+   <h1 style="color: white; font-weight: bold; text-align: center;">Assembly PC Build</h1>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Orbitron:wght@400;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --steampunk-blue: #4a90e2;
+            --steampunk-light-blue: #7bb3f0;
+            --steampunk-dark-blue: #2c5aa0;
+            --steampunk-gray: #b8c5d1;
+            --steampunk-light-gray: #d4dee8;
+            --steampunk-copper: #cd7f32;
+            --steampunk-brass: #b5651d;
+            --dark-bg: #1a1a1a;
+            --dark-panel: #2a2a2a;
+            --dark-secondary: #3a3a3a;
+            --glow-shadow: 0 0 15px;
+        }
+
+        body {
+            font-family: 'Cinzel', serif;
+            background: var(--dark-bg);
+            background-image: 
+                radial-gradient(circle at 25% 25%, rgba(74, 144, 226, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 75% 75%, rgba(184, 197, 209, 0.1) 0%, transparent 50%),
+                linear-gradient(135deg, rgba(44, 90, 160, 0.05) 0%, rgba(26, 26, 26, 1) 100%);
+            min-height: 100vh;
+            padding: 10px;
+            user-select: none;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            min-height: calc(100vh - 20px);
+        }
+
+        @media (min-width: 768px) {
+            .container {
+                grid-template-columns: 1fr 1.5fr;
+                padding: 20px;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .container {
+                grid-template-columns: 1fr 2fr;
+            }
+        }
+
+        .components-panel {
+            background: linear-gradient(145deg, var(--dark-panel), var(--dark-secondary));
+            border: 2px solid var(--steampunk-blue);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 
+                var(--glow-shadow) rgba(74, 144, 226, 0.3),
+                inset 0 0 20px rgba(74, 144, 226, 0.1);
+            backdrop-filter: blur(10px);
+            overflow-y: auto;
+            position: relative;
+            max-height: 50vh;
+        }
+
+        @media (min-width: 768px) {
+            .components-panel {
+                max-height: none;
+            }
+        }
+
+        .components-panel::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, var(--steampunk-blue), var(--steampunk-gray), var(--steampunk-copper));
+            border-radius: 15px;
+            z-index: -1;
+            opacity: 0.3;
+        }
+
+        .case-panel {
+            background: linear-gradient(145deg, var(--dark-panel), var(--dark-secondary));
+            border: 2px solid var(--steampunk-gray);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 
+                var(--glow-shadow) rgba(184, 197, 209, 0.3),
+                inset 0 0 20px rgba(184, 197, 209, 0.1);
+            backdrop-filter: blur(10px);
+            position: relative;
+        }
+
+        .case-panel::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(-45deg, var(--steampunk-gray), var(--steampunk-blue), var(--steampunk-copper));
+            border-radius: 15px;
+            z-index: -1;
+            opacity: 0.3;
+        }
+
+        h2 {
+            color: var(--steampunk-light-blue);
+            margin-bottom: 20px;
+            font-size: clamp(18px, 3vw, 24px);
+            text-align: center;
+            font-weight: 700;
+            text-shadow: 0 0 10px rgba(74, 144, 226, 0.5);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-family: 'Orbitron', monospace;
+        }
+
+        .component {
+            background: linear-gradient(145deg, #2a2a2a, #3a3a3a);
+            border: 2px solid var(--steampunk-blue);
+            border-radius: 10px;
+            padding: 12px;
+            margin: 10px 0;
+            cursor: grab;
+            transition: all 0.3s ease;
+            text-align: center;
+            font-weight: 600;
+            color: var(--steampunk-light-gray);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            min-height: 70px;
+            box-shadow: 0 0 10px rgba(74, 144, 226, 0.2);
+            text-shadow: 0 0 5px rgba(184, 197, 209, 0.3);
+            font-size: clamp(12px, 2vw, 14px);
+            touch-action: none;
+        }
+
+        .component::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(74, 144, 226, 0.3), transparent);
+            transition: left 0.5s;
+        }
+
+        .component:hover::before {
+            left: 100%;
+        }
+
+        .component img {
+            width: clamp(40px, 6vw, 60px);
+            height: clamp(40px, 6vw, 60px);
+            margin-bottom: 6px;
+            object-fit: contain;
+            filter: drop-shadow(0 0 5px var(--steampunk-blue));
+        }
+
+        .component:hover:not(.placed) {
+            transform: translateY(-3px) scale(1.03);
+            box-shadow: 0 0 20px rgba(74, 144, 226, 0.4);
+            border-color: var(--steampunk-light-blue);
+            color: var(--steampunk-light-blue);
+            text-shadow: 0 0 8px rgba(123, 179, 240, 0.5);
+        }
+
+        .component:hover:not(.placed) img {
+            filter: drop-shadow(0 0 8px var(--steampunk-light-blue));
+        }
+
+        .component.dragging {
+            opacity: 0.9;
+            transform: rotate(2deg) scale(1.1);
+            cursor: grabbing;
+            z-index: 1000;
+            box-shadow: 0 0 25px var(--steampunk-copper);
+            border-color: var(--steampunk-copper);
+            color: var(--steampunk-copper);
+            text-shadow: 0 0 10px rgba(205, 127, 50, 0.7);
+            pointer-events: none;
+        }
+
+        .component.dragging img {
+            filter: drop-shadow(0 0 10px var(--steampunk-copper));
+        }
+
+        .component.placed {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: 0 0 5px rgba(74, 144, 226, 0.2);
+        }
+
+        .component.placed:hover {
+            transform: none;
+        }
+
+        .pc-case {
+            width: 100%;
+            height: clamp(400px, 60vh, 600px);
+            background: linear-gradient(145deg, #1a1a1a, #2a2a2a);
+            border: 3px solid var(--steampunk-gray);
+            border-radius: 15px;
+            position: relative;
+            margin: 20px auto;
+            box-shadow: 
+                inset 0 0 30px rgba(184, 197, 209, 0.2),
+                0 0 25px rgba(184, 197, 209, 0.2);
+            transition: all 0.5s ease;
+            background-image: 
+                radial-gradient(circle at 25% 25%, rgba(74, 144, 226, 0.1) 0%, transparent 25%),
+                radial-gradient(circle at 75% 75%, rgba(184, 197, 209, 0.1) 0%, transparent 25%);
+        }
+
+        .pc-case.completed {
+            border-color: var(--steampunk-blue);
+            border-width: 4px;
+            box-shadow: 
+                0 0 40px var(--steampunk-blue),
+                inset 0 0 30px rgba(74, 144, 226, 0.3);
+            animation: completedPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes completedPulse {
+            0%, 100% { box-shadow: 0 0 40px var(--steampunk-blue), inset 0 0 30px rgba(74, 144, 226, 0.3); }
+            50% { box-shadow: 0 0 60px var(--steampunk-blue), inset 0 0 40px rgba(74, 144, 226, 0.4); }
+        }
+
+        .drop-zone {
+            position: absolute;
+            border: 2px dashed rgba(74, 144, 226, 0.4);
+            border-radius: 8px;
+            background: rgba(74, 144, 226, 0.05);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(8px, 1.5vw, 10px);
+            color: rgba(184, 197, 209, 0.6);
+            text-align: center;
+            font-weight: 400;
+        }
+
+        .drop-zone.drag-over {
+            border-color: var(--steampunk-copper);
+            background: rgba(205, 127, 50, 0.2);
+            transform: scale(1.05);
+            box-shadow: 
+                0 0 15px var(--steampunk-copper),
+                inset 0 0 15px rgba(205, 127, 50, 0.3);
+            animation: pulseGlow 0.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 15px var(--steampunk-copper), inset 0 0 15px rgba(205, 127, 50, 0.3); }
+            100% { box-shadow: 0 0 25px var(--steampunk-copper), inset 0 0 25px rgba(205, 127, 50, 0.4); }
+        }
+
+        .drop-zone.filled {
+            border-color: var(--steampunk-blue);
+            background: rgba(74, 144, 226, 0.15);
+            box-shadow: 0 0 15px rgba(74, 144, 226, 0.4);
+        }
+
+        .drop-zone.filled img {
+            width: 80%;
+            height: 80%;
+            object-fit: contain;
+            opacity: 0.9;
+            filter: drop-shadow(0 0 8px var(--steampunk-blue));
+        }
+
+        .motherboard-zone {
+            top: 15%;
+            left: 10%;
+            width: 40%;
+            height: 30%;
+            z-index: 1;
+        }
+
+        .cpu-zone {
+            top: 25%;
+            left: 25%;
+            width: 25%;
+            height: 25%;
+            z-index: 3;
+        }
+
+        .ram-zone {
+            top: 15%;
+            right: 10%;
+            width: 15%;
+            height: 25%;
+            z-index: 2;
+        }
+
+        .gpu-zone {
+            top: 50%;
+            left: 15%;
+            width: 35%;
+            height: 20%;
+            z-index: 2;
+        }
+
+        .psu-zone {
+            bottom: 10%;
+            left: 10%;
+            width: 25%;
+            height: 15%;
+            z-index: 2;
+        }
+
+        .storage-zone {
+            bottom: 10%;
+            right: 10%;
+            width: 20%;
+            height: 15%;
+            z-index: 2;
+        }
+
+        .cooler-zone {
+            top: 22%;
+            left: 22%;
+            width: 30%;
+            height: 30%;
+            z-index: 2;
+        }
+
+        @media (max-width: 767px) {
+            .motherboard-zone { top: 15%; left: 10%; width: 45%; height: 25%; }
+            .cpu-zone { top: 25%; left: 25%; width: 25%; height: 25%; }
+            .ram-zone { top: 15%; right: 10%; width: 18%; height: 20%; }
+            .gpu-zone { top: 55%; left: 15%; width: 40%; height: 15%; }
+            .psu-zone { bottom: 10%; left: 10%; width: 30%; height: 12%; }
+            .storage-zone { bottom: 10%; right: 10%; width: 25%; height: 12%; }
+            .cooler-zone { top: 22%; left: 22%; width: 30%; height: 30%; }
+        }
+
+        .message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: clamp(14px, 3vw, 16px);
+            z-index: 1001;
+            opacity: 0;
+            transition: all 0.5s ease;
+            pointer-events: none;
+            font-family: 'Orbitron', monospace;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            max-width: 90vw;
+            text-align: center;
+        }
+
+        .message.success {
+            background: linear-gradient(135deg, rgba(74, 144, 226, 0.9), rgba(123, 179, 240, 0.9));
+            color: white;
+            border: 2px solid var(--steampunk-blue);
+            box-shadow: 0 0 25px var(--steampunk-blue);
+            text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+        }
+
+        .message.error {
+            background: linear-gradient(135deg, rgba(205, 127, 50, 0.9), rgba(181, 101, 29, 0.9));
+            color: white;
+            border: 2px solid var(--steampunk-copper);
+            box-shadow: 0 0 25px var(--steampunk-copper);
+            text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+        }
+
+        .message.show {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1.05);
+        }
+
+        .progress {
+            margin-top: 15px;
+            text-align: center;
+            font-size: clamp(12px, 2.5vw, 14px);
+            font-weight: 600;
+            color: var(--steampunk-light-blue);
+            text-shadow: 0 0 5px rgba(74, 144, 226, 0.3);
+            font-family: 'Orbitron', monospace;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--steampunk-blue);
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 8px 0;
+            box-shadow: inset 0 0 8px rgba(74, 144, 226, 0.3);
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--steampunk-blue), var(--steampunk-gray));
+            width: 0%;
+            transition: width 0.5s ease;
+            box-shadow: 0 0 8px var(--steampunk-blue);
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-3px); }
+            75% { transform: translateX(3px); }
+        }
+
+        .component.error-shake {
+            animation: shake 0.5s ease-in-out;
+            border-color: var(--steampunk-copper) !important;
+            box-shadow: 0 0 20px var(--steampunk-copper) !important;
+        }
+
+        .steam-effect {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+            border-radius: 15px;
+        }
+
+        .steam-particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(184, 197, 209, 0.3);
+            border-radius: 50%;
+            animation: steam 6s linear infinite;
+        }
+
+        @keyframes steam {
+            0% {
+                bottom: -10px;
+                opacity: 0;
+                transform: translateX(0) scale(0.5);
+            }
+            20% {
+                opacity: 1;
+            }
+            80% {
+                opacity: 1;
+            }
+            100% {
+                bottom: 110%;
+                opacity: 0;
+                transform: translateX(20px) scale(1.2);
+            }
+        }
+
+        .drag-trail {
+            position: fixed;
+            width: 3px;
+            height: 3px;
+            background: var(--steampunk-copper);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 999;
+            box-shadow: 0 0 8px var(--steampunk-copper);
+            animation: trailFade 0.6s ease-out forwards;
+        }
+
+        @keyframes trailFade {
+            0% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(0.3);
+            }
+        }
+
+        .reset-btn {
+            background: linear-gradient(135deg, var(--steampunk-copper), var(--steampunk-brass));
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            margin-top: 15px;
+            display: block;
+            width: 100%;
+            box-shadow: 0 0 10px rgba(205, 127, 50, 0.5);
+            transition: all 0.3s ease;
+        }
+
+        .reset-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 15px var(--steampunk-copper);
+        }
+
+        .reset-btn:active {
+            transform: translateY(1px);
+        }
+
+        @media (hover: none) {
+            .component {
+                padding: 15px;
+                min-height: 80px;
+            }
+            
+            .component img {
+                width: 45px;
+                height: 45px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="components-panel">
+            <div class="steam-effect" id="steamEffect1"></div>
+            <h2>⚙️ Componenti Meccanici</h2>
+            
+            <div class="component" data-component="motherboard">
+                <img src="https://tecnicosoftware.netsons.org/wp-content/uploads/2025/06/schedamadre.png" alt="Motherboard">
+                <div>Scheda Madre</div>
+            </div>
+            
+            <div class="component" data-component="cpu">
+                <img src="https://tecnicosoftware.netsons.org/wp-content/uploads/2025/06/cpu.png" alt="CPU">
+                <div>Processore</div>
+            </div>
+            
+            <div class="component" data-component="ram">
+                <img src="https://tecnicosoftware.netsons.org/wp-content/uploads/2025/06/ram.png" alt="RAM">
+                <div>Memoria RAM</div>
+            </div>
+            
+            <div class="component" data-component="gpu">
+                <img src="https://tecnicosoftware.netsons.org/wp-content/uploads/2025/06/gpu.png" alt="GPU">
+                <div>Scheda Video</div>
+            </div>
+            
+            <div class="component" data-component="psu">
+                <img src="https://tecnicosoftware.netsons.org/wp-content/uploads/2025/06/alimentatore.png" alt="PSU">
+                <div>Alimentatore</div>
+            </div>
+            
+            <div class="component" data-component="storage">
+                <img src="https://tecnicosoftware.netsons.org/wp-content/uploads/2025/06/hdd.png" alt="Storage">
+                <div>Hard Disk</div>
+            </div>
+            
+            <div class="component" data-component="cooler">
+                <img src="https://tecnicosoftware.netsons.org/wp-content/uploads/2025/06/dissipatore.png" alt="Cooler">
+                <div>Dissipatore</div>
+            </div>
+
+            <div class="progress">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div id="progressText">0/7 Componenti Installati</div>
+            </div>
+
+            <button class="reset-btn" id="resetBtn">RESET ASSEMBLAGGIO</button>
+        </div>
+
+        <div class="case-panel">
+            <div class="steam-effect" id="steamEffect2"></div>
+            <h2>🔧 Case del PC</h2>
+            
+            <div class="pc-case" id="pcCase">
+                <div class="drop-zone motherboard-zone" data-accept="motherboard"></div>
+                <div class="drop-zone cpu-zone" data-accept="cpu"></div>
+                <div class="drop-zone ram-zone" data-accept="ram"></div>
+                <div class="drop-zone gpu-zone" data-accept="gpu"></div>
+                <div class="drop-zone psu-zone" data-accept="psu"></div>
+                <div class="drop-zone storage-zone" data-accept="storage"></div>
+                <div class="drop-zone cooler-zone" data-accept="cooler"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="message" id="message"></div>
+
+    <script>
+        let placedComponents = new Set();
+        let gameCompleted = false;
+        let isDragging = false;
+        let dragOffset = { x: 0, y: 0 };
+        let currentDragElement = null;
+        let originalParent = null;
+        let originalNextSibling = null;
+        let lastTrailTime = 0;
+        const totalComponents = 7;
+
+        const componentImages = {
+            motherboard: 'https://tecnicosoftware.netsons.org/wp-content/uploads/2025/06/schedamadre.png',
+            cpu: 'https://tecnicosoftware.netsons.org/wp-content/uploads/2025/06/cpu.png',
+            ram: 'https://tecnicosoftware.netsons.org/wp-content/uploads/2025/06/ram.png',
+            gpu: 'https://tecnicosoftware.netsons.org/wp-content/uploads/2025/06/gpu.png',
+            psu: 'https://tecnicosoftware.netsons.org/wp-content/uploads/2025/06/alimentatore.png',
+            storage: 'https://tecnicosoftware.netsons.org/wp-content/uploads/2025/06/hdd.png',
+            cooler: 'https://tecnicosoftware.netsons.org/wp-content/uploads/2025/06/dissipatore.png'
+        };
+
+        document.querySelectorAll('.component').forEach(component => {
+            component.addEventListener('mousedown', handleMouseDown);
+            component.addEventListener('touchstart', handleTouchStart, { passive: false });
+        });
+
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+        document.addEventListener('touchmove', handleTouchMove, { passive: false });
+        document.addEventListener('touchend', handleTouchEnd);
+
+        document.getElementById('resetBtn').addEventListener('click', resetAll);
+
+        createSteamEffect('steamEffect1', 15);
+        createSteamEffect('steamEffect2', 10);
+
+        function handleMouseDown(e) {
+            if (gameCompleted || e.target.closest('.placed')) return;
+            
+            const component = e.target.closest('.component');
+            if (!component) return;
+            
+            startDrag(component, e.clientX, e.clientY);
+            e.preventDefault();
+        }
+
+        function handleTouchStart(e) {
+            if (gameCompleted || e.target.closest('.placed')) return;
+            
+            const touch = e.touches[0];
+            const component = e.target.closest('.component');
+            if (!component) return;
+            
+            startDrag(component, touch.clientX, touch.clientY);
+            e.preventDefault();
+        }
+
+        function startDrag(element, clientX, clientY) {
+            if (!element || element.classList.contains('placed')) return;
+            
+            isDragging = true;
+            currentDragElement = element;
+            originalParent = element.parentNode;
+            originalNextSibling = element.nextSibling;
+            
+            const rect = element.getBoundingClientRect();
+            dragOffset.x = clientX - rect.left;
+            dragOffset.y = clientY - rect.top;
+            
+            element.classList.add('dragging');
+            element.style.position = 'fixed';
+            element.style.zIndex = '1000';
+            element.style.pointerEvents = 'none';
+            element.style.width = rect.width + 'px';
+            element.style.height = rect.height + 'px';
+            
+            document.body.appendChild(element);
+            updateDragPosition(clientX, clientY);
+        }
+
+        function handleMouseMove(e) {
+            if (!isDragging) return;
+            updateDragPosition(e.clientX, e.clientY);
+            handleDragOver(e.clientX, e.clientY);
+            createTrail(e.clientX, e.clientY);
+        }
+
+        function handleTouchMove(e) {
+            if (!isDragging) return;
+            const touch = e.touches[0];
+            updateDragPosition(touch.clientX, touch.clientY);
+            handleDragOver(touch.clientX, touch.clientY);
+            createTrail(touch.clientX, touch.clientY);
+            e.preventDefault();
+        }
+
+        function createTrail(x, y) {
+            const now = Date.now();
+            if (now - lastTrailTime < 50) return;
+            lastTrailTime = now;
+
+            const trail = document.createElement('div');
+            trail.className = 'drag-trail';
+            trail.style.left = x + 'px';
+            trail.style.top = y + 'px';
+            document.body.appendChild(trail);
+
+            setTimeout(() => {
+                trail.parentNode?.removeChild(trail);
+            }, 600);
+        }
+
+        function updateDragPosition(clientX, clientY) {
+            if (!currentDragElement) return;
+            currentDragElement.style.left = (clientX - dragOffset.x) + 'px';
+            currentDragElement.style.top = (clientY - dragOffset.y) + 'px';
+        }
+
+        function handleDragOver(clientX, clientY) {
+            document.querySelectorAll('.drop-zone').forEach(zone => {
+                zone.classList.remove('drag-over');
+            });
+
+            const elementBelow = document.elementFromPoint(clientX, clientY);
+            const dropZone = elementBelow?.closest('.drop-zone');
+            
+            if (dropZone && !dropZone.classList.contains('filled')) {
+                dropZone.classList.add('drag-over');
+            }
+        }
+
+        function handleMouseUp(e) {
+            if (!isDragging) return;
+            finishDrag(e.clientX, e.clientY);
+        }
+
+        function handleTouchEnd(e) {
+            if (!isDragging) return;
+            const touch = e.changedTouches[0];
+            finishDrag(touch.clientX, touch.clientY);
+        }
+
+        function finishDrag(clientX, clientY) {
+            if (!currentDragElement) return;
+            
+            isDragging = false;
+            currentDragElement.classList.remove('dragging');
+            
+            const elementBelow = document.elementFromPoint(clientX, clientY);
+            const dropZone = elementBelow?.closest('.drop-zone');
+            
+            if (dropZone && !dropZone.classList.contains('filled')) {
+                const componentType = currentDragElement.dataset.component;
+                const acceptType = dropZone.dataset.accept;
+                
+                if (componentType === acceptType || 
+                    (componentType === 'cpu' && (acceptType === 'cooler' || acceptType === 'motherboard'))) {
+                    placeComponent(currentDragElement, dropZone, componentType, acceptType);
+                } else {
+                    showMessage('Componente errato!', 'error');
+                    currentDragElement.classList.add('error-shake');
+                    setTimeout(() => {
+                        currentDragElement.classList.remove('error-shake');
+                        returnToOriginalPosition();
+                    }, 500);
+                }
+            } else {
+                returnToOriginalPosition();
+            }
+            
+            document.querySelectorAll('.drop-zone').forEach(zone => {
+                zone.classList.remove('drag-over');
+            });
+        }
+
+        function placeComponent(component, dropZone, componentType, acceptType) {
+            component.classList.add('placed');
+            dropZone.classList.add('filled');
+            
+            const img = document.createElement('img');
+            img.src = componentImages[component.dataset.component];
+            dropZone.innerHTML = '';
+            dropZone.appendChild(img);
+            
+            // Special handling for CPU on cooler or motherboard
+            if (componentType === 'cpu' && (acceptType === 'cooler' || acceptType === 'motherboard')) {
+                placedComponents.add('cpu');
+                showMessage('Processore installato!', 'success');
+                component.style.display = 'none';
+                
+                if (acceptType === 'cooler' && !placedComponents.has('cooler')) {
+                    placedComponents.add('cooler');
+                    document.querySelector('.component[data-component="cooler"]').classList.add('placed');
+                }
+            } else {
+                placedComponents.add(component.dataset.component);
+                showMessage('Componente installato!', 'success');
+            }
+            
+            returnToOriginalPosition();
+            updateProgress();
+            
+            if (placedComponents.size === totalComponents) {
+                gameCompleted = true;
+                document.getElementById('pcCase').classList.add('completed');
+                showMessage('Assemblaggio completato!', 'success');
+            }
+        }
+
+        function returnToOriginalPosition() {
+            if (!currentDragElement) return;
+            
+            currentDragElement.style.position = '';
+            currentDragElement.style.left = '';
+            currentDragElement.style.top = '';
+            currentDragElement.style.width = '';
+            currentDragElement.style.height = '';
+            currentDragElement.style.zIndex = '';
+            currentDragElement.style.pointerEvents = '';
+            
+            if (originalNextSibling) {
+                originalParent.insertBefore(currentDragElement, originalNextSibling);
+            } else {
+                originalParent.appendChild(currentDragElement);
+            }
+            
+            currentDragElement = null;
+        }
+
+        function updateProgress() {
+            const progress = placedComponents.size;
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            
+            progressFill.style.width = `${(progress / totalComponents) * 100}%`;
+            progressText.textContent = `${progress}/${totalComponents} Componenti Installati`;
+        }
+
+        function showMessage(text, type) {
+            const message = document.getElementById('message');
+            message.textContent = text;
+            message.className = `message ${type} show`;
+            
+            setTimeout(() => {
+                message.classList.remove('show');
+            }, 2000);
+        }
+
+        function resetAll() {
+            document.querySelectorAll('.component').forEach(component => {
+                component.classList.remove('placed');
+                component.style.display = '';
+            });
+            
+            document.querySelectorAll('.drop-zone').forEach(zone => {
+                zone.classList.remove('filled');
+                zone.innerHTML = '';
+            });
+            
+            placedComponents.clear();
+            gameCompleted = false;
+            document.getElementById('pcCase').classList.remove('completed');
+            updateProgress();
+            showMessage('Assemblaggio resettato', 'success');
+        }
+
+        function createSteamEffect(containerId, particleCount) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'steam-particle';
+                particle.style.left = `${Math.random() * 100}%`;
+                particle.style.animationDelay = `${Math.random() * 6}s`;
+                const size = 2 + Math.random() * 4;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                container.appendChild(particle);
+            }
+        }
+    </script>
+</body>
+</html>
